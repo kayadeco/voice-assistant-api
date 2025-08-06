@@ -1,13 +1,18 @@
-# elevenlabs_utils.py
+from elevenlabs.client import ElevenLabs
 import os
-from elevenlabs import Voice, VoiceSettings, generate, save
+from dotenv import load_dotenv
 
-def generate_speech(text, voice_id):
-    audio = generate(
+load_dotenv()
+
+client = ElevenLabs(
+    api_key=os.getenv("ELEVEN_API_KEY")
+)
+
+def synthesize_speech(text, voice_id="Oq0cIHWGcnbOGozOQv0t"):  # replace with your voice ID
+    audio = client.text_to_speech.convert(
+        voice_id=voice_id,
+        model_id="eleven_multilingual_v2",
         text=text,
-        voice=Voice(
-            voice_id=voice_id,
-            settings=VoiceSettings(stability=0.75, similarity_boost=0.75)
-        )
+        output_format="mp3_44100_128"
     )
-    save(audio, "output.mp3")
+    return audio

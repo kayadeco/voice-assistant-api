@@ -1,3 +1,6 @@
+from whisper_utils import transcribe_audio
+from gpt_utils import get_gpt_response
+from elevenlabs_utils import synthesize_speech
 from flask import Flask, request, send_file, Response
 from dotenv import load_dotenv
 from flask_cors import CORS
@@ -19,7 +22,8 @@ VOICE_ID = os.getenv("VOICE_ID")
 # OpenAI API info
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
-# === Route 1: TEXT to SPEECH (your existing one) ===
+
+# === Route 1: TEXT to SPEECH ===
 @app.route('/speak')
 def speak():
     text = request.args.get('text')
@@ -147,6 +151,24 @@ def voicechat_stream():
     return Response(generate_audio(), mimetype="audio/mpeg")
 
 
-# === Start the Flask app ===
+# === Route 4: UTILS based CHAT (clean modular route) ===
+@app.route('/chat', methods=['POST'])
+def chat():
+    audio_file = request.files.get('audio')
+    if not audio_file:
+        return "Missing audio file", 400
+
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as tmp:
+        audio_path = tmp.name
+        audio_file.save(audio_path)
+
+    transcript = transcribe_audio(audio_path)
+    reply = get_gpt_response(transcript)
+    output_path = synthesize_speech(reply)
+
+    return send_file(output_path, mimetype="audio/mpeg")
+
+
+# === Run Server ===
 if __name__ == '__main__':
     app.run(debug=True)
