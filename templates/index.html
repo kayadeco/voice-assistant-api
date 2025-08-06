@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Voice Chat with AI</title>
+</head>
+<body>
+  <h2>🎤 Talk to Your Voice Assistant</h2>
+  <button onclick="startRecording()">Start Recording</button>
+  <button onclick="stopRecording()" disabled id="stopBtn">Stop</button>
+  <p id="status"></p>
+  <audio id="audioPlayback" controls></audio>
+
+  <script>
+    let mediaRecorder;
+    let audioChunks = [];
+
+    async function startRecording() {
+      document.getElementById("status").innerText = "Recording...";
+      document.getElementById("stopBtn").disabled = false;
+
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorder = new MediaRecorder(stream);
+      mediaRecorder.start();
+
+      mediaRecorder.ondataavailable = event => {
+        audioChunks.push(event.data);
+      };
+    }
+
+    async function stopRecording() {
+      document.getElementById("stopBtn").disabled = true;
+      document.getElementById("status").innerText = "Sending...";
+
+      mediaRecorder.stop();
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunks, { type: 'audio/mp3' });
+        const formData = new FormData();
+        formData.append('audio', audioBlob, 'recording.mp3');
+
+        const response = await fetch('https://5f3011b18562.ngrok-free.app/voicechat', {
+          method: 'POST',
+          body: formData
+        });
+
+        const audioData = await response.blob();
+        const audioURL = URL.createObjectURL(audioData);
+        document.getElementById("audioPlayback").src = audioURL;
+        document.getElementById("status").innerText = "Done ✅";
+        audioChunks = [];
+      };
+    }
+  </script>
+</body>
+</html>
