@@ -1,6 +1,14 @@
 from whisper_utils import transcribe_audio
 from gpt_utils import get_gpt_response
 from elevenlabs_utils import synthesize_speech
+@app.route('/')
+def hello():
+    return "Server is live!"
+@app.route('/speak')
+def speak():
+    text = request.args.get('text')
+    if not text:
+        return "Missing 'text' parameter", 400
 from flask import Flask, request, send_file, Response
 from dotenv import load_dotenv
 from flask_cors import CORS
@@ -171,7 +179,8 @@ def chat():
 
 # === Run Server ===
 import os
+# Only needed for local dev
+# Remove or comment out for Render
+# if __name__ == '__main__':
+#     app.run(debug=False, host='0.0.0.0', port=10000)
 
-if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 5000))
-    app.run(debug=False, host='0.0.0.0', port=port)
