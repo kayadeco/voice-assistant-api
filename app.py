@@ -109,12 +109,16 @@ def chat():
     return send_file(output_path, mimetype="audio/mpeg")
 
 # === Phase 3: Streamed Voice Output (/voicechat-stream) ===
+from memory import add_to_memory, get_memory, clear_memory
+
 @app.route('/voicechat-stream', methods=['POST'])
 def voicechat_stream():
-    if 'audio' not in request.files:
-        return "Missing audio file", 400
+    if 'audio' not in request.files or 'session_id' not in request.form:
+        return "Missing audio or session_id", 400
 
+    session_id = request.form['session_id']
     audio_file = request.files['audio']
+
     with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as tmp:
         audio_file.save(tmp.name)
         temp_audio_path = tmp.name
@@ -123,14 +127,24 @@ def voicechat_stream():
         transcript = openai.Audio.transcribe("whisper-1", file)
     user_text = transcript["text"]
 
+    # Retrieve full memory and add latest user message
+    messages = get_memory(session_id)
+    messages.append({"role": "user", "content": user_text})
+
+    # Add initial system message if memory is empty
+    if not any(m["role"] == "system" for m in messages):
+        messages.insert(0, {"role": "system", "content": "You are a helpful voice assistant for Decotales Interiors. Answer queries about services, process, FAQs, etc."})
+
+    # Get GPT reply
     gpt_response = openai.ChatCompletion.create(
         model="gpt-4",
-        messages=[
-            {"role": "system", "content": "You are a helpful AI voice assistant."},
-            {"role": "user", "content": user_text}
-        ]
+        messages=messages
     )
     gpt_reply = gpt_response['choices'][0]['message']['content']
+
+    # Save reply to memory
+    add_to_memory(session_id, "user", user_text)
+    add_to_memory(session_id, "assistant", gpt_reply)
 
     def generate_audio():
         url = f"https://api.elevenlabs.io/v1/text-to-speech/{VOICE_ID}/stream"
