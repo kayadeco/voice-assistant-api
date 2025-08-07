@@ -1,7 +1,7 @@
 from whisper_utils import transcribe_audio
 from gpt_utils import get_gpt_response
 from elevenlabs_utils import synthesize_speech
-from flask import Flask, request, send_file, Response
+from flask import Flask, request, send_file, Response, render_template
 from dotenv import load_dotenv
 from flask_cors import CORS
 import requests
@@ -151,7 +151,7 @@ def voicechat_stream():
     return Response(generate_audio(), mimetype="audio/mpeg")
 
 
-# === Route 4: UTILS based CHAT (clean modular route) ===
+# === Route 4: UTILS based CHAT (modular) ===
 @app.route('/chat', methods=['POST'])
 def chat():
     audio_file = request.files.get('audio')
@@ -169,15 +169,18 @@ def chat():
     return send_file(output_path, mimetype="audio/mpeg")
 
 
-# === Run Server ===
-import os
+# === Route 5: Render Voice Chat UI ===
+@app.route('/interface')
+def interface():
+    return render_template('index.html')
 
+
+# === Default Home Page ===
 @app.route('/')
 def home():
-    return "Welcome to Kaya Voice API – use /speak or /chat endpoints."
+    return "Welcome to Kaya Voice API – use /speak, /chat, or /interface."
 
+# === Run Server ===
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
     app.run(debug=False, host='0.0.0.0', port=port)
-
-
