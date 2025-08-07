@@ -9,8 +9,30 @@ import os
 import tempfile
 import openai
 
+# === In-Memory Conversation Tracker ===
+conversation_memory = {}
+
 # === Load env variables ===
 load_dotenv()
+
+def get_gpt_response_with_memory(session_id, user_input):
+    memory = conversation_memory.get(session_id, [])
+
+    memory.append({"role": "user", "content": user_input})
+
+    response = openai.ChatCompletion.create(
+        model="gpt-4",
+        messages=[
+            {"role": "system", "content": "You are Decotales' helpful voice assistant. You give polite, smart replies to interior queries."},
+            *memory
+        ]
+    )
+
+    reply = response['choices'][0]['message']['content']
+    memory.append({"role": "assistant", "content": reply})
+
+    conversation_memory[session_id] = memory
+    return reply
 
 # === App Setup ===
 app = Flask(__name__)
@@ -71,6 +93,8 @@ def listen():
 @app.route('/chat', methods=['POST'])
 def chat():
     audio_file = request.files.get('audio')
+    session_id = request.form.get('session_id', 'default_user')  # fallback if not provided
+
     if not audio_file:
         return "Missing audio file", 400
 
@@ -79,11 +103,10 @@ def chat():
         audio_file.save(audio_path)
 
     transcript = transcribe_audio(audio_path)
-    reply = get_gpt_response(transcript)
+    reply = get_gpt_response_with_memory(session_id, transcript)
     output_path = synthesize_speech(reply)
 
     return send_file(output_path, mimetype="audio/mpeg")
-
 
 # === Phase 3: Streamed Voice Output (/voicechat-stream) ===
 @app.route('/voicechat-stream', methods=['POST'])
