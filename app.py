@@ -1,3 +1,4 @@
+from memory import add_to_memory, get_memory, clear_memory
 from whisper_utils import transcribe_audio
 from gpt_utils import get_gpt_response
 from elevenlabs_utils import synthesize_speech
