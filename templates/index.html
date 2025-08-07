@@ -38,6 +38,8 @@
         const audioBlob = new Blob(audioChunks, { type: 'audio/mp3' });
         const formData = new FormData();
         formData.append('audio', audioBlob, 'recording.mp3');
+        formData.append('session_id', 'test_user_123'); // static for now, dynamic later
+
 
         try {
           const response = await fetch('/voicechat-stream', {
