@@ -1,3 +1,19 @@
+# === Route 4: UTILS based CHAT (clean modular route) ===
+# @app.route('/chat', methods=['POST'])
+# def chat():
+#     audio_file = request.files.get('audio')
+#     if not audio_file:
+#         return "Missing audio file", 400
+#
+#     with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as tmp:
+#         audio_path = tmp.name
+#         audio_file.save(audio_path)
+#
+#     transcript = transcribe_audio(audio_path)
+#     reply = get_gpt_response(transcript)
+#     output_path = synthesize_speech(reply)
+#
+#     return send_file(output_path, mimetype="audio/mpeg")
 from whisper_utils import transcribe_audio
 from gpt_utils import get_gpt_response
 from elevenlabs_utils import synthesize_speech
